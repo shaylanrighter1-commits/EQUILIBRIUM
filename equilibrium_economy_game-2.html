@@ -1,0 +1,2065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EQUILIBRIUM — Economy Board Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0e14;
+    --panel: #13151f;
+    --panel2: #1a1d2e;
+    --border: #2a2d45;
+    --gold: #e8c44a;
+    --gold2: #f5d878;
+    --green: #3ecf8e;
+    --red: #f5654a;
+    --blue: #4a9ff5;
+    --purple: #a855f7;
+    --orange: #f59e4a;
+    --text: #e8e9f0;
+    --muted: #7a7d99;
+    --accent: #e8c44a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* SCREENS */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; }
+
+  /* ===== INTRO SCREEN ===== */
+  #intro {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 30% 20%, #1a1a3e 0%, #0d0e14 60%);
+  }
+  .grid-bg {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(var(--border) 1px, transparent 1px),
+                      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.3;
+  }
+  .intro-content { position: relative; text-align: center; max-width: 700px; padding: 40px; }
+  .game-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 900;
+    color: var(--gold);
+    letter-spacing: -2px;
+    line-height: 1;
+    text-shadow: 0 0 60px rgba(232,196,74,0.3);
+  }
+  .game-subtitle {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 4px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin: 12px 0 32px;
+  }
+  .intro-desc {
+    color: #b0b3cc;
+    font-size: 1rem;
+    line-height: 1.7;
+    margin-bottom: 40px;
+  }
+  .btn-primary {
+    background: var(--gold);
+    color: #0d0e14;
+    border: none;
+    padding: 16px 48px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+  .btn-primary:hover { background: var(--gold2); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(232,196,74,0.3); }
+  .concept-pills {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 36px;
+  }
+  .pill {
+    background: var(--panel2); border: 1px solid var(--border);
+    padding: 4px 12px; border-radius: 20px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
+    color: var(--muted); letter-spacing: 1px;
+  }
+
+  /* ===== MAIN GAME SCREEN ===== */
+  #game {
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .header-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    color: var(--gold);
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-right: 12px;
+  }
+  .turn-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+  .turn-num {
+    color: var(--gold);
+    font-weight: 600;
+  }
+  .phase-badge {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--blue);
+    letter-spacing: 1px;
+  }
+  .header-spacer { flex: 1; }
+  .end-turn-btn {
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: 8px 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+  .end-turn-btn:hover { background: var(--gold); color: #0d0e14; }
+
+  /* INDICATORS BAR */
+  .indicators-bar {
+    background: var(--panel2);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .indicator {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .ind-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .ind-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .ind-bar {
+    width: 80px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .ind-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  /* GAME BODY */
+  .game-body {
+    display: grid;
+    grid-template-columns: 280px 1fr 300px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* LEFT PANEL — Resources */
+  .left-panel {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .panel-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+  }
+
+  .resource-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .resource-card {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: border-color 0.2s;
+  }
+  .resource-card:hover { border-color: var(--gold); }
+  .res-icon { font-size: 1.4rem; }
+  .res-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+  .res-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .res-delta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+  }
+  .pos { color: var(--green); }
+  .neg { color: var(--red); }
+  .neu { color: var(--muted); }
+
+  /* Goals section */
+  .goal-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .goal-item:last-child { border-bottom: none; }
+  .goal-label {
+    font-size: 0.8rem;
+    flex: 1;
+    color: #b0b3cc;
+  }
+  .goal-meter {
+    width: 60px; height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .goal-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+  .goal-score {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    width: 28px;
+    text-align: right;
+  }
+
+  /* Trade panel */
+  .trade-btn {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    border-radius: 4px;
+    width: 100%;
+    text-align: left;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .trade-btn:hover { border-color: var(--blue); background: rgba(74,159,245,0.08); }
+  .trade-cost {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  /* CENTER — Game Board */
+  .center-panel {
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* Event card */
+  .event-card {
+    background: linear-gradient(135deg, #1a1d2e 0%, #13151f 100%);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--gold);
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .event-card::before {
+    content: '';
+    position: absolute;
+    top: -20px; right: -20px;
+    width: 100px; height: 100px;
+    background: radial-gradient(circle, rgba(232,196,74,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .event-type {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 3px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .event-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .event-desc {
+    font-size: 0.85rem;
+    color: #b0b3cc;
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+  .event-effects {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
+  }
+  .effect-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+  }
+  .effect-tag.pos { background: rgba(62,207,142,0.15); color: var(--green); border: 1px solid rgba(62,207,142,0.3); }
+  .effect-tag.neg { background: rgba(245,101,74,0.15); color: var(--red); border: 1px solid rgba(245,101,74,0.3); }
+  .effect-tag.neu { background: rgba(74,159,245,0.15); color: var(--blue); border: 1px solid rgba(74,159,245,0.3); }
+
+  /* Decision section */
+  .decisions-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .decisions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .decision-btn {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    color: var(--text);
+  }
+  .decision-btn:hover { border-color: var(--gold); background: rgba(232,196,74,0.05); transform: translateY(-1px); }
+  .decision-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .dec-label { font-size: 0.85rem; font-weight: 500; margin-bottom: 4px; }
+  .dec-desc { font-size: 0.72rem; color: var(--muted); line-height: 1.4; margin-bottom: 8px; }
+  .dec-costs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .cost-chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    padding: 2px 6px;
+    border-radius: 2px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  /* Market Board */
+  .market-section {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+  }
+  .market-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .market-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .market-item {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .market-item:hover { border-color: var(--blue); }
+  .market-item.selected { border-color: var(--gold); background: rgba(232,196,74,0.05); }
+  .market-good { font-size: 1.2rem; margin-bottom: 4px; }
+  .market-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .market-price {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--gold);
+    margin-top: 4px;
+  }
+  .market-trend { font-size: 0.7rem; }
+
+  /* PPF Section */
+  .ppf-container {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+  }
+
+  /* RIGHT PANEL — Log + Policy */
+  .right-panel {
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* Policy controls */
+  .policy-control {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .policy-control:last-child { border-bottom: none; }
+  .pol-label {
+    font-size: 0.8rem;
+    color: #b0b3cc;
+    display: flex;
+    justify-content: space-between;
+  }
+  .pol-name { font-weight: 500; }
+  .pol-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--gold);
+  }
+  .pol-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  .pol-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    background: var(--gold);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .pol-slider::-webkit-slider-thumb:hover { transform: scale(1.3); }
+  .pol-effect {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+  }
+
+  /* Event Log */
+  .log-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .log-entry {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    color: #b0b3cc;
+    line-height: 1.4;
+    animation: logIn 0.3s ease;
+  }
+  @keyframes logIn {
+    from { opacity: 0; transform: translateX(10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .log-turn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+
+  /* International Trade */
+  .trade-route {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .trade-route:hover { border-color: var(--blue); }
+  .trade-route.active { border-color: var(--green); background: rgba(62,207,142,0.05); }
+  .route-flag { font-size: 1.2rem; }
+  .route-info { flex: 1; }
+  .route-name { font-size: 0.8rem; font-weight: 500; }
+  .route-desc { font-size: 0.68rem; color: var(--muted); }
+  .route-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.2s;
+  }
+  .route-btn:hover { border-color: var(--green); color: var(--green); }
+  .route-btn.active { border-color: var(--green); color: var(--green); }
+
+  /* GDP Chart (canvas) */
+  #gdpCanvas {
+    width: 100%;
+    height: 90px;
+    display: block;
+    border-radius: 4px;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.hidden { display: none; }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    max-width: 480px;
+    width: 90%;
+    position: relative;
+  }
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+  .modal-body { font-size: 0.85rem; color: #b0b3cc; line-height: 1.7; margin-bottom: 20px; }
+  .modal-close {
+    background: var(--gold); color: #0d0e14;
+    border: none; padding: 10px 28px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem; letter-spacing: 1px;
+    cursor: pointer; font-weight: 600;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  .modal-close:hover { background: var(--gold2); }
+
+  /* END SCREEN */
+  #endscreen {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, #1a1a3e 0%, #0d0e14 70%);
+    text-align: center;
+    padding: 40px;
+    gap: 24px;
+  }
+  .end-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 6vw, 4rem);
+    font-weight: 900;
+    color: var(--gold);
+  }
+  .final-scores {
+    display: grid;
+    grid-template-columns: repeat(2, 200px);
+    gap: 12px;
+    margin: 8px 0;
+  }
+  .final-score-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .fsc-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 4px; }
+  .fsc-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 700;
+  }
+  .grade-display {
+    font-family: 'Playfair Display', serif;
+    font-size: 5rem;
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 40px rgba(232,196,74,0.4);
+  }
+  .end-analysis {
+    max-width: 500px;
+    font-size: 0.85rem;
+    color: #b0b3cc;
+    line-height: 1.7;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: left;
+  }
+  .scrollbar-style::-webkit-scrollbar { width: 4px; }
+  .scrollbar-style::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-style::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Notification toast */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text);
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    max-width: 400px;
+    text-align: center;
+  }
+  #toast.show { opacity: 1; }
+
+  /* ===== MISSION SELECT SCREEN ===== */
+  #missionSelect {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 70% 80%, #1a1a3e 0%, #0d0e14 60%);
+    padding: 40px 20px;
+    gap: 28px;
+  }
+  .mission-header { text-align: center; }
+  .mission-screen-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    font-weight: 900;
+    color: var(--gold);
+    letter-spacing: -1px;
+  }
+  .mission-screen-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+  .missions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+    max-width: 900px;
+    width: 100%;
+  }
+  .mission-card {
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .mission-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--mission-color, var(--gold));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .mission-card:hover { border-color: var(--mission-color, var(--gold)); transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+  .mission-card:hover::before { opacity: 1; }
+  .mission-card.selected { border-color: var(--mission-color, var(--gold)); background: var(--panel2); }
+  .mission-card.selected::before { opacity: 1; }
+  .mission-icon { font-size: 2rem; margin-bottom: 8px; }
+  .mission-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .mission-diff {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    color: var(--mission-color, var(--gold));
+  }
+  .mission-desc {
+    font-size: 0.78rem;
+    color: #b0b3cc;
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+  .mission-targets {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .mission-target {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+  }
+  .target-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .mission-select-btn {
+    background: var(--gold);
+    color: #0d0e14;
+    border: none;
+    padding: 14px 48px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .mission-select-btn.ready { opacity: 1; pointer-events: all; }
+  .mission-select-btn.ready:hover { background: var(--gold2); transform: translateY(-2px); }
+
+  /* ===== MISSION TRACKER (in-game) ===== */
+  .mission-tracker {
+    background: var(--panel2);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .mission-tracker-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .mission-name-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 3px;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+  .mission-targets-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    flex: 1;
+  }
+  .tracker-target {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    white-space: nowrap;
+  }
+  .tracker-check {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.55rem;
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+  .tracker-check.done { background: var(--green); border-color: var(--green); color: #0d0e14; }
+  .tracker-check.fail { background: var(--red); border-color: var(--red); color: #fff; }
+  .tracker-val { color: var(--text); }
+  .tracker-val.done { color: var(--green); }
+  .tracker-val.fail { color: var(--red); }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .game-body { grid-template-columns: 1fr; }
+    .left-panel, .right-panel { display: none; }
+    .decisions-grid { grid-template-columns: 1fr; }
+    .market-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- INTRO SCREEN -->
+<div class="screen active" id="intro">
+  <div class="grid-bg"></div>
+  <div class="intro-content">
+    <div class="game-title">EQUILIBRIUM</div>
+    <div class="game-subtitle">The Economy Board Game</div>
+    <p class="intro-desc">
+      You are the economic minister of a young nation. For <strong>10 turns</strong>, navigate crises, 
+      set policy, manage resources, and trade internationally — all while balancing the four goals 
+      of every economy: <em>employment, stability, growth,</em> and <em>equity</em>.
+    </p>
+    <div class="concept-pills">
+      <span class="pill">SCARCITY</span>
+      <span class="pill">SUPPLY & DEMAND</span>
+      <span class="pill">PPF</span>
+      <span class="pill">FACTORS OF PRODUCTION</span>
+      <span class="pill">MONEY & BANKING</span>
+      <span class="pill">INFLATION</span>
+      <span class="pill">FISCAL POLICY</span>
+      <span class="pill">MONETARY POLICY</span>
+      <span class="pill">INTERNATIONAL TRADE</span>
+      <span class="pill">ECONOMIC INDICATORS</span>
+    </div>
+    <button class="btn-primary" onclick="startGame()">BEGIN SIMULATION</button>
+  </div>
+</div>
+
+<!-- MISSION SELECT SCREEN -->
+<div class="screen" id="missionSelect">
+  <div class="mission-header">
+    <div class="mission-screen-title">Choose Your Mission</div>
+    <div class="mission-screen-sub">Select a win condition — then prove you can achieve it</div>
+  </div>
+  <div class="missions-grid" id="missionsGrid"></div>
+  <button class="mission-select-btn" id="missionStartBtn" onclick="confirmMission()">ACCEPT MISSION →</button>
+</div>
+
+<!-- MAIN GAME SCREEN -->
+<div class="screen" id="game">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-title">EQUILIBRIUM</div>
+    <span class="turn-badge">TURN <span class="turn-num" id="turnNum">1</span> / 10</span>
+    <span class="phase-badge" id="phaseLabel">PLANNING PHASE</span>
+    <div class="header-spacer"></div>
+    <button class="end-turn-btn" onclick="endTurn()">END TURN →</button>
+  </div>
+
+  <!-- INDICATORS BAR -->
+  <div class="indicators-bar">
+    <div class="indicator">
+      <div class="ind-label">GDP (₤B)</div>
+      <div class="ind-value" id="gdpVal" style="color:var(--green)">100</div>
+      <div class="ind-bar"><div class="ind-fill" id="gdpBar" style="background:var(--green);width:50%"></div></div>
+    </div>
+    <div class="indicator">
+      <div class="ind-label">Unemployment</div>
+      <div class="ind-value" id="unempVal" style="color:var(--orange)">8%</div>
+      <div class="ind-bar"><div class="ind-fill" id="unempBar" style="background:var(--orange);width:40%"></div></div>
+    </div>
+    <div class="indicator">
+      <div class="ind-label">Inflation</div>
+      <div class="ind-value" id="inflVal" style="color:var(--blue)">2%</div>
+      <div class="ind-bar"><div class="ind-fill" id="inflBar" style="background:var(--blue);width:10%"></div></div>
+    </div>
+    <div class="indicator">
+      <div class="ind-label">Treasury (₤)</div>
+      <div class="ind-value" id="treasuryVal" style="color:var(--gold)">500</div>
+      <div class="ind-bar"><div class="ind-fill" id="treasuryBar" style="background:var(--gold);width:50%"></div></div>
+    </div>
+    <div class="indicator">
+      <div class="ind-label">Interest Rate</div>
+      <div class="ind-value" id="rateVal" style="color:var(--purple)">3%</div>
+      <div class="ind-bar"><div class="ind-fill" id="rateBar" style="background:var(--purple);width:30%"></div></div>
+    </div>
+    <div class="indicator">
+      <div class="ind-label">Trade Balance</div>
+      <div class="ind-value" id="tradeVal" style="color:var(--text)">+0</div>
+    </div>
+    <div class="indicator">
+      <div class="ind-label">Overall Score</div>
+      <div class="ind-value" id="scoreVal" style="color:var(--gold)">50</div>
+    </div>
+  </div>
+
+  <!-- MISSION TRACKER -->
+  <div class="mission-tracker" id="missionTracker">
+    <div class="mission-tracker-label">MISSION</div>
+    <div class="mission-name-badge" id="trackerMissionName" style="color:var(--gold);border-color:var(--gold)">—</div>
+    <div class="mission-targets-row" id="trackerTargets"></div>
+  </div>
+
+  <!-- GAME BODY -->
+  <div class="game-body">
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel scrollbar-style">
+
+      <!-- Resources -->
+      <div>
+        <div class="panel-title">Factors of Production</div>
+        <div class="resource-grid">
+          <div class="resource-card">
+            <div class="res-icon">🌾</div>
+            <div class="res-name">LAND</div>
+            <div class="res-value" id="resLand">40</div>
+            <div class="res-delta neu" id="deltaLand">—</div>
+          </div>
+          <div class="resource-card">
+            <div class="res-icon">👷</div>
+            <div class="res-name">LABOR</div>
+            <div class="res-value" id="resLabor">35</div>
+            <div class="res-delta neu" id="deltaLabor">—</div>
+          </div>
+          <div class="resource-card">
+            <div class="res-icon">⚙️</div>
+            <div class="res-name">CAPITAL</div>
+            <div class="res-value" id="resCapital">25</div>
+            <div class="res-delta neu" id="deltaCapital">—</div>
+          </div>
+          <div class="resource-card">
+            <div class="res-icon">💡</div>
+            <div class="res-name">ENTREPR.</div>
+            <div class="res-value" id="resEntrepr">15</div>
+            <div class="res-delta neu" id="deltaEntrepr">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 Goals -->
+      <div>
+        <div class="panel-title">Economic Goals</div>
+        <div class="goal-item">
+          <span class="goal-label">🧑‍💼 Employment</span>
+          <div class="goal-meter"><div class="goal-fill" id="goalEmp" style="background:var(--green);width:60%"></div></div>
+          <span class="goal-score" id="goalEmpVal" style="color:var(--green)">60</span>
+        </div>
+        <div class="goal-item">
+          <span class="goal-label">📊 Stability</span>
+          <div class="goal-meter"><div class="goal-fill" id="goalStab" style="background:var(--blue);width:80%"></div></div>
+          <span class="goal-score" id="goalStabVal" style="color:var(--blue)">80</span>
+        </div>
+        <div class="goal-item">
+          <span class="goal-label">📈 Growth</span>
+          <div class="goal-meter"><div class="goal-fill" id="goalGrowth" style="background:var(--orange);width:40%"></div></div>
+          <span class="goal-score" id="goalGrowthVal" style="color:var(--orange)">40</span>
+        </div>
+        <div class="goal-item">
+          <span class="goal-label">⚖️ Equity</span>
+          <div class="goal-meter"><div class="goal-fill" id="goalEquity" style="background:var(--purple);width:45%"></div></div>
+          <span class="goal-score" id="goalEquityVal" style="color:var(--purple)">45</span>
+        </div>
+      </div>
+
+      <!-- PPF -->
+      <div class="ppf-container">
+        <div class="panel-title">Production Possibilities</div>
+        <canvas id="ppfCanvas" width="240" height="160" style="width:100%;border-radius:4px;"></canvas>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <div style="flex:1;text-align:center;">
+            <div class="res-name">GOODS</div>
+            <div id="ppfGoods" style="font-family:'IBM Plex Mono',monospace;font-size:0.9rem;color:var(--green)">40</div>
+          </div>
+          <div style="flex:1;text-align:center;">
+            <div class="res-name">SERVICES</div>
+            <div id="ppfServices" style="font-family:'IBM Plex Mono',monospace;font-size:0.9rem;color:var(--blue)">30</div>
+          </div>
+        </div>
+        <p style="font-size:0.68rem;color:var(--muted);margin-top:8px;line-height:1.5;">More goods = less services. Drag the slider to shift production (opportunity cost).</p>
+        <input type="range" class="pol-slider" id="ppfSlider" min="0" max="100" value="57" style="width:100%;margin-top:8px;" oninput="updatePPF(this.value)">
+      </div>
+
+    </div>
+
+    <!-- CENTER PANEL -->
+    <div class="center-panel scrollbar-style">
+
+      <!-- Event Card -->
+      <div class="event-card" id="eventCard">
+        <div class="event-type" id="eventType">ECONOMIC EVENT</div>
+        <div class="event-title" id="eventTitle">Loading event...</div>
+        <div class="event-desc" id="eventDesc"></div>
+        <div class="event-effects" id="eventEffects"></div>
+        <div class="decisions-title">YOUR RESPONSE — Choose one action (costs resources)</div>
+        <div class="decisions-grid" id="decisionsGrid"></div>
+      </div>
+
+      <!-- Market Board -->
+      <div class="market-section">
+        <div class="market-title">Market — Supply & Demand Prices</div>
+        <div class="market-grid" id="marketGrid"></div>
+        <p style="font-size:0.7rem;color:var(--muted);margin-top:10px;">Prices shift each turn based on your decisions and events. Buy low, sell high via trade routes →</p>
+      </div>
+
+      <!-- GDP History -->
+      <div style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:18px;">
+        <div class="market-title">GDP History — Economic Growth Indicator</div>
+        <canvas id="gdpCanvas"></canvas>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel scrollbar-style">
+
+      <!-- Fiscal Policy -->
+      <div>
+        <div class="panel-title">Fiscal Policy (Government)</div>
+        <div class="policy-control">
+          <div class="pol-label">
+            <span class="pol-name">Tax Rate</span>
+            <span class="pol-val" id="taxDisplay">20%</span>
+          </div>
+          <input type="range" class="pol-slider" id="taxSlider" min="5" max="60" value="20" oninput="updatePolicy()">
+          <div class="pol-effect" id="taxEffect">Higher taxes → more revenue, less growth</div>
+        </div>
+        <div class="policy-control">
+          <div class="pol-label">
+            <span class="pol-name">Gov. Spending</span>
+            <span class="pol-val" id="spendDisplay">40%</span>
+          </div>
+          <input type="range" class="pol-slider" id="spendSlider" min="10" max="80" value="40" oninput="updatePolicy()">
+          <div class="pol-effect" id="spendEffect">Higher spending → more employment, inflation risk</div>
+        </div>
+      </div>
+
+      <!-- Monetary Policy -->
+      <div>
+        <div class="panel-title">Monetary Policy (Central Bank)</div>
+        <div class="policy-control">
+          <div class="pol-label">
+            <span class="pol-name">Interest Rate</span>
+            <span class="pol-val" id="rateDisplay">3%</span>
+          </div>
+          <input type="range" class="pol-slider" id="rateSlider" min="0" max="20" value="3" oninput="updatePolicy()">
+          <div class="pol-effect" id="rateEffect">Lower rates → cheaper borrowing, growth & inflation</div>
+        </div>
+        <div class="policy-control">
+          <div class="pol-label">
+            <span class="pol-name">Money Supply</span>
+            <span class="pol-val" id="moneyDisplay">Normal</span>
+          </div>
+          <input type="range" class="pol-slider" id="moneySlider" min="0" max="100" value="50" oninput="updatePolicy()">
+          <div class="pol-effect" id="moneyEffect">More money → inflation risk but stimulates economy</div>
+        </div>
+      </div>
+
+      <!-- International Trade -->
+      <div>
+        <div class="panel-title">International Trade</div>
+        <div id="tradeRoutes"></div>
+      </div>
+
+      <!-- Event Log -->
+      <div>
+        <div class="panel-title">Event Log</div>
+        <div class="log-list scrollbar-style" id="eventLog"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- END SCREEN -->
+<div class="screen" id="endscreen">
+  <div class="grade-display" id="finalGrade">B</div>
+  <div class="end-title" id="endTitle">Solid Leadership</div>
+  <div class="final-scores" id="finalScores"></div>
+  <div class="end-analysis" id="endAnalysis"></div>
+  <button class="btn-primary" onclick="location.reload()">PLAY AGAIN</button>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Result</div>
+    <div class="modal-body" id="modalBody"></div>
+    <button class="modal-close" onclick="closeModal()">CONTINUE</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ===== GAME STATE =====
+const state = {
+  turn: 1, maxTurns: 10,
+  treasury: 500, maxTreasury: 1000,
+  gdp: 100, gdpHistory: [100],
+  unemployment: 8, inflation: 2, interestRate: 3,
+  tradeBalance: 0,
+  resources: { land: 40, labor: 35, capital: 25, entrepr: 15 },
+  goals: { employment: 60, stability: 80, growth: 40, equity: 45 },
+  ppfGoods: 40, ppfServices: 30,
+  market: {},
+  tradeRoutes: [],
+  activeDecision: false,
+  eventLog: [],
+  score: 50,
+  policy: { tax: 20, spend: 40, rate: 3, money: 50 },
+  missionWon: false
+};
+
+// ===== MARKET GOODS =====
+const goods = [
+  { id: 'wheat', name: 'Wheat', icon: '🌾', basePrice: 10 },
+  { id: 'steel', name: 'Steel', icon: '⚙️', basePrice: 30 },
+  { id: 'tech', name: 'Tech', icon: '💻', basePrice: 50 },
+  { id: 'oil', name: 'Oil', icon: '🛢️', basePrice: 40 },
+  { id: 'textiles', name: 'Textiles', icon: '🧵', basePrice: 15 },
+  { id: 'pharma', name: 'Pharma', icon: '💊', basePrice: 45 },
+  { id: 'food', name: 'Food', icon: '🍎', basePrice: 12 },
+  { id: 'energy', name: 'Energy', icon: '⚡', basePrice: 35 }
+];
+
+// Init market
+goods.forEach(g => {
+  state.market[g.id] = { price: g.basePrice, trend: 0 };
+});
+
+// ===== TRADE ROUTES =====
+const tradeRouteDefs = [
+  { id: 'eastoria', name: 'Eastoria', flag: '🌏', desc: 'Export goods, import tech. +15 GDP, -5 land', active: false,
+    effect: () => { state.gdp += 15; state.resources.land -= 5; state.tradeBalance += 20; } },
+  { id: 'nordvia', name: 'Nordvia', flag: '🌍', desc: 'Import capital machinery. +10 capital, -40 treasury', active: false,
+    effect: () => { state.resources.capital += 10; state.treasury -= 40; state.tradeBalance -= 15; } },
+  { id: 'solana', name: 'Solana', flag: '🌎', desc: 'Labor exchange. +8 labor, -5 equity', active: false,
+    effect: () => { state.resources.labor += 8; state.goals.equity -= 5; state.tradeBalance += 5; } },
+  { id: 'arctia', name: 'Arctia', flag: '❄️', desc: 'Oil imports. +inflation 1%, -20 treasury', active: false,
+    effect: () => { state.inflation += 1; state.treasury -= 20; state.tradeBalance -= 10; } }
+];
+state.tradeRoutes = tradeRouteDefs.map(r => ({...r}));
+
+// ===== EVENTS =====
+const events = [
+  {
+    turn: 1, type: 'ECONOMIC SHOCK', title: 'Harvest Crisis',
+    desc: 'A drought has devastated agricultural output. Food prices are rising and workers are leaving farms. You must decide how to respond.',
+    effects: ['-10 LAND', '+2% INFLATION', 'FOOD +30%'],
+    effectFn: () => { state.resources.land -= 10; state.inflation += 2; state.market.wheat.price *= 1.3; state.market.food.price *= 1.3; },
+    decisions: [
+      { label: 'Import Food', desc: 'Use treasury to import food. Stabilizes prices but reduces savings.', costs: ['-80₤'], fn: () => { state.treasury -= 80; state.inflation -= 1; state.goals.stability += 10; log('Imported food: prices stabilized.'); } },
+      { label: 'Subsidize Farmers', desc: 'Use public funds to keep farmers on land. Costs treasury, boosts land.', costs: ['-60₤', '+5 LAND'], fn: () => { state.treasury -= 60; state.resources.land += 5; state.goals.equity += 5; log('Farmers subsidized: land protected.'); } },
+      { label: 'Let Market Adjust', desc: 'Allow prices to rise until supply increases naturally. Painful short-term.', costs: ['-5 STABILITY'], fn: () => { state.goals.stability -= 5; state.goals.growth += 8; log('Market left to adjust: growth boosted long-term.'); } },
+      { label: 'Emergency Rations', desc: 'Distribute reserves to low-income households. Costly but boosts equity.', costs: ['-100₤', '+10 EQUITY'], fn: () => { state.treasury -= 100; state.goals.equity += 10; state.goals.employment += 3; log('Emergency rations distributed: equity improved.'); } }
+    ]
+  },
+  {
+    turn: 2, type: 'INVESTMENT OPPORTUNITY', title: 'Tech Boom',
+    desc: 'A wave of entrepreneurship is sweeping the nation. New startups are forming but need capital and infrastructure to grow.',
+    effects: ['+ENTREPR', 'TECH DEMAND UP', 'OPPORTUNITY COST'],
+    effectFn: () => { state.resources.entrepr += 5; state.market.tech.price *= 1.2; },
+    decisions: [
+      { label: 'Fund Incubators', desc: 'Invest in startup hubs. High growth potential.', costs: ['-80₤', '+8 ENTREPR'], fn: () => { state.treasury -= 80; state.resources.entrepr += 8; state.goals.growth += 12; log('Incubators funded: entrepreneurship surges.'); } },
+      { label: 'Build Infrastructure', desc: 'Expand capital assets to support business.', costs: ['-100₤', '+12 CAPITAL'], fn: () => { state.treasury -= 100; state.resources.capital += 12; state.goals.growth += 8; log('Infrastructure built: capital base strengthened.'); } },
+      { label: 'Tax Incentives', desc: 'Reduce business taxes to attract investment.', costs: ['-30 TAX REVENUE', '+GROWTH'], fn: () => { state.treasury -= 30; state.goals.growth += 15; state.goals.equity -= 5; log('Tax incentives granted: growth up, equity down.'); } },
+      { label: 'Do Nothing', desc: 'Conserve treasury. Miss the boom but stay stable.', costs: ['NO COST'], fn: () => { state.goals.stability += 5; log('Conservative approach: stability maintained.'); } }
+    ]
+  },
+  {
+    turn: 3, type: 'SOCIAL CRISIS', title: 'Rising Inequality',
+    desc: 'Income disparity is at a historic high. Protests are forming. The wealthiest 10% hold 60% of resources. Public trust is eroding.',
+    effects: ['-15 EQUITY', '-EMPLOYMENT', 'SOCIAL UNREST'],
+    effectFn: () => { state.goals.equity -= 15; state.goals.employment -= 8; },
+    decisions: [
+      { label: 'Wealth Tax', desc: 'Impose a 5% tax on high earners. Boosts equity, may slow investment.', costs: ['+80₤', '+EQUITY', '-GROWTH'], fn: () => { state.treasury += 80; state.goals.equity += 20; state.goals.growth -= 8; log('Wealth tax enacted: equity up, growth slows.'); } },
+      { label: 'Universal Basic Income', desc: 'Provide monthly stipend to all citizens. Very expensive.', costs: ['-150₤', '+EQUITY', '+EMPLOYMENT'], fn: () => { state.treasury -= 150; state.goals.equity += 25; state.goals.employment += 10; state.inflation += 1; log('UBI launched: equity and employment improve.'); } },
+      { label: 'Skills Training', desc: 'Invest in worker retraining programs. Balanced approach.', costs: ['-60₤', '+LABOR', '+EQUITY'], fn: () => { state.treasury -= 60; state.resources.labor += 8; state.goals.equity += 12; state.goals.employment += 8; log('Skills training funded: labor force upgraded.'); } },
+      { label: 'Ignore Protests', desc: 'Maintain current policy. Saves money but worsens unrest.', costs: ['-10 EQUITY', '-STABILITY'], fn: () => { state.goals.equity -= 10; state.goals.stability -= 10; log('Protests ignored: unrest deepens.'); } }
+    ]
+  },
+  {
+    turn: 4, type: 'MONETARY SHOCK', title: 'Inflation Spiral',
+    desc: 'Consumer prices have risen 8% in the last quarter. The central bank is under pressure. Savings are losing value rapidly.',
+    effects: ['+5% INFLATION', '-STABILITY', '-PURCHASING POWER'],
+    effectFn: () => { state.inflation += 5; state.goals.stability -= 10; },
+    decisions: [
+      { label: 'Raise Interest Rates', desc: 'Higher rates cool the economy. Reduces inflation but slows growth.', costs: ['+3% RATE', '-GROWTH'], fn: () => { state.interestRate += 3; state.inflation -= 4; state.goals.growth -= 8; state.goals.stability += 10; log('Rates raised: inflation cooling.'); } },
+      { label: 'Price Controls', desc: 'Government sets maximum prices. Short-term fix, long-term distortions.', costs: ['-60₤', '+STABILITY SHORT'], fn: () => { state.treasury -= 60; state.inflation -= 2; state.goals.stability += 5; state.goals.growth -= 5; log('Price controls enacted: temporary relief.'); } },
+      { label: 'Reduce Money Supply', desc: 'Contract monetary policy aggressively.', costs: ['-EMPLOYMENT', '-INFLATION'], fn: () => { state.inflation -= 5; state.unemployment += 2; state.goals.employment -= 10; state.goals.stability += 15; log('Money supply contracted: inflation down, jobs lost.'); } },
+      { label: 'Let Inflation Run', desc: 'Accept inflation, protect growth. Risky strategy.', costs: ['-STABILITY', '+SHORT GROWTH'], fn: () => { state.goals.stability -= 15; state.goals.growth += 10; log('Inflation tolerated: growth continues short-term.'); } }
+    ]
+  },
+  {
+    turn: 5, type: 'GLOBAL EVENT', title: 'International Trade War',
+    desc: 'Two major economies have imposed tariffs on each other. Your exports are caught in the crossfire. Trade volume has dropped 25%.',
+    effects: ['-TRADE BALANCE', '-GDP', '+UNEMPLOYMENT'],
+    effectFn: () => { state.tradeBalance -= 30; state.gdp -= 8; state.unemployment += 2; },
+    decisions: [
+      { label: 'Retaliate with Tariffs', desc: 'Protect domestic industry. Short-term pain, possible long-term gain.', costs: ['-TRADE', '+DOMESTIC'], fn: () => { state.tradeBalance -= 10; state.goals.growth -= 5; state.resources.capital += 5; log('Retaliatory tariffs imposed: domestic industry protected.'); } },
+      { label: 'Seek New Trade Partners', desc: 'Diversify exports. Costs entrepreneurship but opens new markets.', costs: ['-5 ENTREPR', '+TRADE'], fn: () => { state.resources.entrepr -= 5; state.tradeBalance += 20; state.goals.growth += 8; log('New trade routes established: export diversified.'); } },
+      { label: 'Subsidize Exporters', desc: 'Help affected businesses survive the tariff war.', costs: ['-80₤', '-INFLATION'], fn: () => { state.treasury -= 80; state.goals.employment += 8; state.goals.growth += 5; log('Exporters subsidized: jobs protected.'); } },
+      { label: 'Negotiate Bilateral Deal', desc: 'Use diplomacy. Slow but preserves all relationships.', costs: ['-3 ENTREPR', '+ALL'], fn: () => { state.resources.entrepr -= 3; state.tradeBalance += 15; state.goals.stability += 10; log('Bilateral deal negotiated: stability restored.'); } }
+    ]
+  },
+  {
+    turn: 6, type: 'BANKING CRISIS', title: 'Bank Run',
+    desc: 'Citizens are withdrawing savings en masse after rumors of insolvency. The money supply is contracting fast. Credit has frozen.',
+    effects: ['-STABILITY', '-CAPITAL', 'CREDIT FREEZE'],
+    effectFn: () => { state.goals.stability -= 20; state.resources.capital -= 10; state.treasury -= 50; },
+    decisions: [
+      { label: 'Bail Out Banks', desc: 'Use treasury to guarantee deposits and restore confidence.', costs: ['-200₤', '+STABILITY'], fn: () => { state.treasury -= 200; state.goals.stability += 25; state.goals.equity -= 10; log('Banks bailed out: system stabilized, equity hit.'); } },
+      { label: 'Deposit Insurance', desc: 'Announce government guarantee on deposits up to ₤10,000.', costs: ['-80₤', '+TRUST'], fn: () => { state.treasury -= 80; state.goals.stability += 15; state.goals.equity += 5; log('Deposit insurance announced: bank run slows.'); } },
+      { label: 'Let Banks Fail', desc: 'Market will clear. Very painful but no moral hazard.', costs: ['-STABILITY', '-CAPITAL', '+LONG GROWTH'], fn: () => { state.goals.stability -= 15; state.resources.capital -= 10; state.goals.growth += 5; log('Banks left to fail: painful correction begins.'); } },
+      { label: 'Emergency Liquidity', desc: 'Central bank injects liquidity directly. Inflation risk.', costs: ['+2% INFLATION', '+STABILITY'], fn: () => { state.inflation += 2; state.goals.stability += 20; log('Emergency liquidity injected: crisis stabilized.'); } }
+    ]
+  },
+  {
+    turn: 7, type: 'INFRASTRUCTURE NEED', title: 'Infrastructure Gap',
+    desc: 'Roads, power grids, and broadband are failing. Business productivity is dropping. Entrepreneurs are considering leaving.',
+    effects: ['-CAPITAL', '-ENTREPR', '-GDP GROWTH'],
+    effectFn: () => { state.resources.capital -= 8; state.resources.entrepr -= 5; state.gdp -= 5; },
+    decisions: [
+      { label: 'Public Works Program', desc: 'Large government spending on infrastructure. Boosts employment and capital.', costs: ['-150₤', '+CAPITAL', '+EMPLOYMENT'], fn: () => { state.treasury -= 150; state.resources.capital += 15; state.goals.employment += 12; state.goals.growth += 8; log('Public works program launched: capital and jobs added.'); } },
+      { label: 'Private Partnerships', desc: 'Invite private firms to build and operate infrastructure.', costs: ['-EQUITY', '+CAPITAL', '+ENTREPR'], fn: () => { state.goals.equity -= 8; state.resources.capital += 12; state.resources.entrepr += 5; log('Private partnerships formed: efficient but inequitable.'); } },
+      { label: 'Foreign Aid Package', desc: 'Accept infrastructure investment from allied nations.', costs: ['-SOVEREIGNTY', '+CAPITAL'], fn: () => { state.resources.capital += 18; state.goals.stability += 5; state.tradeBalance -= 10; log('Foreign aid accepted: infrastructure funded.'); } },
+      { label: 'Austerity', desc: 'Cut spending, prioritize debt reduction instead.', costs: ['-GROWTH', '+TREASURY'], fn: () => { state.treasury += 60; state.goals.growth -= 10; state.goals.employment -= 5; log('Austerity maintained: debt managed, growth sacrificed.'); } }
+    ]
+  },
+  {
+    turn: 8, type: 'TECHNOLOGICAL SHIFT', title: 'Automation Wave',
+    desc: 'Robots and AI are replacing factory workers. Productivity is up 30% but unemployment is rising in manufacturing sectors.',
+    effects: ['+GDP', '+UNEMPLOYMENT', '+CAPITAL', '-EQUITY'],
+    effectFn: () => { state.gdp += 10; state.unemployment += 4; state.resources.capital += 8; state.goals.equity -= 10; },
+    decisions: [
+      { label: 'Embrace Automation', desc: 'Remove restrictions on automation. GDP soars, workers suffer.', costs: ['+GDP', '-EQUITY', '-EMPLOYMENT'], fn: () => { state.gdp += 15; state.goals.equity -= 15; state.goals.employment -= 10; state.goals.growth += 15; log('Automation embraced: GDP up, inequality worsens.'); } },
+      { label: 'Automation Tax', desc: 'Tax companies that automate. Fund retraining programs.', costs: ['-GROWTH', '+EQUITY', '+EMPLOYMENT'], fn: () => { state.goals.growth -= 5; state.goals.equity += 15; state.goals.employment += 10; log('Automation tax enacted: redistribution begins.'); } },
+      { label: 'Retraining Programs', desc: 'Transition displaced workers into new industries.', costs: ['-80₤', '+LABOR', '+EMPLOYMENT'], fn: () => { state.treasury -= 80; state.resources.labor += 5; state.goals.employment += 15; log('Retraining programs launched: workforce adapts.'); } },
+      { label: 'Tech Export Strategy', desc: 'Sell our automation tech internationally.', costs: ['-ENTREPR', '+TRADE', '+GDP'], fn: () => { state.resources.entrepr -= 3; state.tradeBalance += 25; state.gdp += 8; log('Tech exported: trade balance improves.'); } }
+    ]
+  },
+  {
+    turn: 9, type: 'CLIMATE EVENT', title: 'Environmental Costs',
+    desc: 'Pollution from rapid industrialization is costing the economy ₤30B/year in healthcare and lost productivity. International pressure mounts.',
+    effects: ['-LAND', '-GDP', '+PRESSURE'],
+    effectFn: () => { state.resources.land -= 10; state.gdp -= 8; state.treasury -= 30; },
+    decisions: [
+      { label: 'Green New Deal', desc: 'Massive investment in clean energy and environmental restoration.', costs: ['-200₤', '+LAND', '+EQUITY', '+LONG GROWTH'], fn: () => { state.treasury -= 200; state.resources.land += 15; state.goals.equity += 10; state.goals.growth += 5; log('Green New Deal passed: environment and equity improve.'); } },
+      { label: 'Carbon Tax', desc: 'Tax pollution, use revenue for clean transition.', costs: ['+80₤', '-SHORT GROWTH', '+STABILITY'], fn: () => { state.treasury += 80; state.goals.growth -= 5; state.goals.stability += 10; state.resources.land += 5; log('Carbon tax enacted: revenue collected, emissions down.'); } },
+      { label: 'Voluntary Standards', desc: 'Encourage industry to self-regulate. Cheaper but ineffective.', costs: ['MINIMAL COST'], fn: () => { state.goals.stability += 3; log('Voluntary standards adopted: minimal environmental change.'); } },
+      { label: 'Ignore Environment', desc: 'Prioritize growth. Worsens long-term prospects significantly.', costs: ['-LAND', '-EQUITY', '+SHORT GROWTH'], fn: () => { state.resources.land -= 5; state.goals.equity -= 10; state.goals.growth += 8; log('Environment ignored: short-term gains, long-term damage.'); } }
+    ]
+  },
+  {
+    turn: 10, type: 'FINAL CHALLENGE', title: 'The Great Reckoning',
+    desc: 'FINAL TURN. All your past decisions have shaped this moment. A global recession looms. How you respond will define your economic legacy.',
+    effects: ['-10 ALL INDICATORS', 'FINAL SCORE'],
+    effectFn: () => { state.gdp -= 10; state.unemployment += 3; state.inflation += 1; },
+    decisions: [
+      { label: 'Stimulus Package', desc: 'Massive fiscal stimulus. Risk inflation but protect jobs.', costs: ['-200₤', '+EMPLOYMENT', '+GROWTH'], fn: () => { state.treasury -= 200; state.goals.employment += 15; state.goals.growth += 15; state.inflation += 2; log('Final stimulus: fighting recession with spending.'); } },
+      { label: 'Balanced Approach', desc: 'Moderate intervention. Protect most goals simultaneously.', costs: ['-80₤', '+ALL GOALS 5'], fn: () => { state.treasury -= 80; state.goals.employment += 5; state.goals.stability += 5; state.goals.growth += 5; state.goals.equity += 5; log('Balanced approach: moderate gains across all goals.'); } },
+      { label: 'Austerity & Reform', desc: 'Cut spending, structural reform. Long-term health at short-term cost.', costs: ['+TREASURY', '-SHORT TERM'], fn: () => { state.treasury += 100; state.goals.growth += 10; state.goals.stability += 10; state.goals.employment -= 5; log('Austerity: fiscal discipline at cost of employment.'); } },
+      { label: 'International Coalition', desc: 'Coordinate with trade partners on global response.', costs: ['-ENTREPR', '+TRADE', '+STABILITY'], fn: () => { state.resources.entrepr -= 5; state.tradeBalance += 30; state.goals.stability += 20; log('International coalition formed: global stability improved.'); } }
+    ]
+  }
+];
+
+let currentEvent = null;
+let decisionMade = false;
+
+// ===== MISSIONS =====
+const missionDefs = [
+  {
+    id: 'prosperity',
+    name: 'The Prosperous Nation',
+    icon: '📈',
+    difficulty: 'MODERATE',
+    color: '#3ecf8e',
+    desc: 'Build a thriving economy with strong GDP growth, full employment, and a healthy treasury. The classic recipe for national success.',
+    targets: [
+      { label: 'GDP ≥ ₤140B', key: 'gdp', op: '>=', val: 140, get: () => state.gdp },
+      { label: 'Unemployment ≤ 5%', key: 'unemp', op: '<=', val: 5, get: () => state.unemployment },
+      { label: 'Treasury ≥ ₤300', key: 'treasury', op: '>=', val: 300, get: () => state.treasury },
+      { label: 'Growth score ≥ 65', key: 'growth', op: '>=', val: 65, get: () => state.goals.growth }
+    ]
+  },
+  {
+    id: 'equality',
+    name: 'The Just Society',
+    icon: '⚖️',
+    difficulty: 'HARD',
+    color: '#a855f7',
+    desc: 'Prioritize the people. Achieve high equity and employment while keeping inflation under control. Wealth redistribution is not free.',
+    targets: [
+      { label: 'Equity score ≥ 70', key: 'equity', op: '>=', val: 70, get: () => state.goals.equity },
+      { label: 'Employment score ≥ 70', key: 'emp', op: '>=', val: 70, get: () => state.goals.employment },
+      { label: 'Inflation ≤ 6%', key: 'infl', op: '<=', val: 6, get: () => state.inflation },
+      { label: 'All goals ≥ 50', key: 'allgoals', op: '>=', val: 50, get: () => Math.min(...Object.values(state.goals)) }
+    ]
+  },
+  {
+    id: 'stability',
+    name: 'The Steady Hand',
+    icon: '🏛️',
+    difficulty: 'EASY',
+    color: '#4a9ff5',
+    desc: 'Keep the ship steady. Avoid runaway inflation or deflation, protect your treasury, and maintain public confidence throughout all 10 crises.',
+    targets: [
+      { label: 'Stability score ≥ 70', key: 'stab', op: '>=', val: 70, get: () => state.goals.stability },
+      { label: 'Inflation between 1–5%', key: 'inflRange', op: 'range', val: [1, 5], get: () => state.inflation },
+      { label: 'Treasury ≥ ₤200', key: 'treas', op: '>=', val: 200, get: () => state.treasury },
+      { label: 'Score ≥ 55', key: 'score', op: '>=', val: 55, get: () => state.score }
+    ]
+  },
+  {
+    id: 'trader',
+    name: 'The Global Trader',
+    icon: '🌐',
+    difficulty: 'HARD',
+    color: '#f59e4a',
+    desc: 'Make your nation an international powerhouse. Open all trade routes, run a positive trade balance, and grow GDP through globalization.',
+    targets: [
+      { label: 'All 4 trade routes open', key: 'routes', op: '>=', val: 4, get: () => state.tradeRoutes.filter(r => r.active).length },
+      { label: 'Trade balance ≥ +20', key: 'trade', op: '>=', val: 20, get: () => state.tradeBalance },
+      { label: 'GDP ≥ ₤130B', key: 'gdp', op: '>=', val: 130, get: () => state.gdp },
+      { label: 'Entrepreneurship ≥ 20', key: 'entrepr', op: '>=', val: 20, get: () => state.resources.entrepr }
+    ]
+  },
+  {
+    id: 'comeback',
+    name: 'The Great Recovery',
+    icon: '🔥',
+    difficulty: 'VERY HARD',
+    color: '#f5654a',
+    desc: 'Your economy starts in deeper trouble. You begin with extra penalties — can you recover and achieve all four goals above 60 by the end?',
+    targets: [
+      { label: 'All 4 goals ≥ 60', key: 'allgoals60', op: '>=', val: 60, get: () => Math.min(...Object.values(state.goals)) },
+      { label: 'GDP ≥ ₤120B', key: 'gdp', op: '>=', val: 120, get: () => state.gdp },
+      { label: 'Score ≥ 65', key: 'score', op: '>=', val: 65, get: () => state.score }
+    ],
+    startPenalty: () => {
+      state.treasury -= 150;
+      state.gdp -= 20;
+      state.unemployment += 5;
+      state.goals.employment -= 15;
+      state.goals.equity -= 10;
+      state.inflation += 3;
+    }
+  },
+  {
+    id: 'balanced',
+    name: 'The Balanced Economy',
+    icon: '🎯',
+    difficulty: 'MODERATE',
+    color: '#e8c44a',
+    desc: 'The hardest act in economics: balance ALL four goals simultaneously. No single priority dominates — achieve harmony across the board.',
+    targets: [
+      { label: 'Employment ≥ 60', key: 'emp', op: '>=', val: 60, get: () => state.goals.employment },
+      { label: 'Stability ≥ 60', key: 'stab', op: '>=', val: 60, get: () => state.goals.stability },
+      { label: 'Growth ≥ 60', key: 'growth', op: '>=', val: 60, get: () => state.goals.growth },
+      { label: 'Equity ≥ 60', key: 'equity', op: '>=', val: 60, get: () => state.goals.equity }
+    ]
+  }
+];
+
+let selectedMission = null;
+
+function checkTarget(t) {
+  const v = t.get();
+  if (t.op === '>=') return v >= t.val;
+  if (t.op === '<=') return v <= t.val;
+  if (t.op === 'range') return v >= t.val[0] && v <= t.val[1];
+  return false;
+}
+
+function renderMissionSelect() {
+  const grid = document.getElementById('missionsGrid');
+  grid.innerHTML = '';
+  missionDefs.forEach(m => {
+    const card = document.createElement('div');
+    card.className = 'mission-card';
+    card.style.setProperty('--mission-color', m.color);
+    card.innerHTML = `
+      <div class="mission-icon">${m.icon}</div>
+      <div class="mission-name">${m.name}</div>
+      <div class="mission-diff" style="color:${m.color}">${m.difficulty}</div>
+      <div class="mission-desc">${m.desc}</div>
+      <div class="mission-targets">
+        ${m.targets.map(t => `
+          <div class="mission-target">
+            <div class="target-dot" style="background:${m.color}"></div>
+            <span>${t.label}</span>
+          </div>`).join('')}
+      </div>
+    `;
+    card.onclick = () => selectMission(m.id, card);
+    grid.appendChild(card);
+  });
+}
+
+function selectMission(id, card) {
+  document.querySelectorAll('.mission-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  selectedMission = missionDefs.find(m => m.id === id);
+  const btn = document.getElementById('missionStartBtn');
+  btn.classList.add('ready');
+}
+
+function confirmMission() {
+  if (!selectedMission) return;
+  document.getElementById('missionSelect').classList.remove('active');
+  document.getElementById('game').classList.add('active');
+
+  // Apply start penalty if any
+  if (selectedMission.startPenalty) selectedMission.startPenalty();
+
+  renderMissionTracker();
+  loadEvent();
+  renderAll();
+}
+
+function renderMissionTracker() {
+  if (!selectedMission) return;
+  const nameEl = document.getElementById('trackerMissionName');
+  nameEl.textContent = selectedMission.icon + ' ' + selectedMission.name;
+  nameEl.style.color = selectedMission.color;
+  nameEl.style.borderColor = selectedMission.color;
+
+  const row = document.getElementById('trackerTargets');
+  row.innerHTML = '';
+  selectedMission.targets.forEach(t => {
+    const done = checkTarget(t);
+    const cur = t.get();
+    const displayVal = typeof cur === 'number' ? (Number.isInteger(cur) ? cur : cur.toFixed(1)) : cur;
+
+    const el = document.createElement('div');
+    el.className = 'tracker-target';
+    el.innerHTML = `
+      <div class="tracker-check ${done ? 'done' : ''}">
+        ${done ? '✓' : ''}
+      </div>
+      <span class="tracker-val ${done ? 'done' : ''}">${t.label} <span style="color:${done ? 'var(--green)' : 'var(--muted)'}">(${displayVal})</span></span>
+    `;
+    row.appendChild(el);
+  });
+}
+
+// ===== MISSION WIN CHECK =====
+function checkMissionMilestones() {
+  if (!selectedMission) return;
+  const allDone = selectedMission.targets.every(t => checkTarget(t));
+  if (allDone && !state.missionWon) {
+    state.missionWon = true;
+    showToast('🎉 All mission targets met! Keep going to secure your lead!', 4000);
+  }
+}
+
+
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+function showToast(msg, duration = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function showModal(title, body) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = body;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.add('hidden');
+}
+
+function log(msg) {
+  state.eventLog.unshift({ turn: state.turn, msg });
+  renderLog();
+}
+
+// ===== INIT =====
+function startGame() {
+  document.getElementById('intro').classList.remove('active');
+  document.getElementById('missionSelect').classList.add('active');
+  renderMissionSelect();
+}
+
+// ===== LOAD EVENT =====
+function loadEvent() {
+  decisionMade = false;
+  currentEvent = events[state.turn - 1];
+  if (!currentEvent) return;
+
+  // Apply event effects
+  currentEvent.effectFn();
+
+  // Render event
+  document.getElementById('eventType').textContent = currentEvent.type;
+  document.getElementById('eventTitle').textContent = currentEvent.title;
+  document.getElementById('eventDesc').textContent = currentEvent.desc;
+
+  const efDiv = document.getElementById('eventEffects');
+  efDiv.innerHTML = '';
+  currentEvent.effects.forEach(e => {
+    const tag = document.createElement('span');
+    tag.className = 'effect-tag ' + (e.startsWith('+') ? 'pos' : e.startsWith('-') ? 'neg' : 'neu');
+    tag.textContent = e;
+    efDiv.appendChild(tag);
+  });
+
+  // Render decisions
+  const grid = document.getElementById('decisionsGrid');
+  grid.innerHTML = '';
+  currentEvent.decisions.forEach((d, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'decision-btn';
+    btn.innerHTML = `
+      <div class="dec-label">${d.label}</div>
+      <div class="dec-desc">${d.desc}</div>
+      <div class="dec-costs">${d.costs.map(c => `<span class="cost-chip">${c}</span>`).join('')}</div>
+    `;
+    btn.onclick = () => makeDecision(d, btn);
+    grid.appendChild(btn);
+  });
+
+  log(`EVENT: ${currentEvent.title} — Choose your response.`);
+  renderAll();
+}
+
+function makeDecision(decision, btn) {
+  if (decisionMade) { showToast('Already made a decision this turn!'); return; }
+  decisionMade = true;
+
+  decision.fn();
+  updateScore();
+  renderAll();
+
+  // Disable all buttons
+  document.querySelectorAll('.decision-btn').forEach(b => { b.disabled = true; });
+  btn.style.borderColor = 'var(--green)';
+  btn.style.background = 'rgba(62,207,142,0.08)';
+
+  showModal('Decision Made: ' + decision.label,
+    `<strong>${decision.desc}</strong><br><br>Your choice has been enacted. The effects will ripple through your economy. Monitor your indicators carefully. Remember: every decision has an <em>opportunity cost</em> — the path not taken.`);
+}
+
+// ===== END TURN =====
+function endTurn() {
+  if (!decisionMade) {
+    showToast('⚠️ Make a decision first!');
+    return;
+  }
+
+  // Apply policy effects
+  applyPolicyEffects();
+
+  // Apply active trade routes
+  state.tradeRoutes.filter(r => r.active).forEach(r => r.effect());
+
+  // Fluctuate market
+  fluctuateMarket();
+
+  // Clamp values
+  clampState();
+  updateScore();
+
+  // Update GDP history
+  state.gdpHistory.push(state.gdp);
+
+  // Phase label
+  document.getElementById('phaseLabel').textContent = 'RESULTS PHASE';
+
+  if (state.turn >= state.maxTurns) {
+    setTimeout(showEndScreen, 800);
+    return;
+  }
+
+  state.turn++;
+  document.getElementById('turnNum').textContent = state.turn;
+  document.getElementById('phaseLabel').textContent = 'PLANNING PHASE';
+
+  loadEvent();
+  renderAll();
+  drawGDP();
+}
+
+function applyPolicyEffects() {
+  const tax = parseInt(document.getElementById('taxSlider').value);
+  const spend = parseInt(document.getElementById('spendSlider').value);
+  const rate = parseInt(document.getElementById('rateSlider').value);
+  const money = parseInt(document.getElementById('moneySlider').value);
+
+  state.policy = { tax, spend, rate, money };
+
+  // Tax: revenue vs growth
+  const taxRevenue = tax * 4;
+  state.treasury += taxRevenue * 0.3;
+  state.goals.growth += (20 - tax) * 0.2;
+  state.goals.equity += (tax - 20) * 0.15;
+
+  // Spending: employment vs inflation
+  const spendEffect = spend - 40;
+  state.goals.employment += spendEffect * 0.15;
+  state.inflation += spendEffect * 0.05;
+  state.treasury -= spend * 1.5;
+
+  // Interest rate: inflation vs growth
+  state.inflation -= (rate - 3) * 0.4;
+  state.goals.growth -= (rate - 3) * 0.3;
+  state.interestRate = rate;
+
+  // Money supply: inflation vs growth
+  const mEffect = (money - 50) / 10;
+  state.inflation += mEffect * 0.3;
+  state.goals.growth += mEffect * 0.2;
+
+  // GDP grows based on growth goal
+  state.gdp += (state.goals.growth - 40) * 0.2;
+  state.unemployment = clamp(20 - state.goals.employment / 5, 0, 25);
+}
+
+function fluctuateMarket() {
+  goods.forEach(g => {
+    const change = (Math.random() - 0.5) * 0.2 + (state.inflation - 2) * 0.01;
+    state.market[g.id].price = Math.max(1, state.market[g.id].price * (1 + change));
+    state.market[g.id].trend = change;
+  });
+}
+
+function clampState() {
+  state.treasury = clamp(state.treasury, -200, 2000);
+  state.gdp = clamp(state.gdp, 10, 300);
+  state.unemployment = clamp(state.unemployment, 0, 25);
+  state.inflation = clamp(state.inflation, -3, 20);
+  state.interestRate = clamp(state.interestRate, 0, 20);
+  Object.keys(state.goals).forEach(k => { state.goals[k] = clamp(state.goals[k], 0, 100); });
+  Object.keys(state.resources).forEach(k => { state.resources[k] = clamp(state.resources[k], 0, 100); });
+}
+
+function updateScore() {
+  const goalAvg = (state.goals.employment + state.goals.stability + state.goals.growth + state.goals.equity) / 4;
+  const treasuryScore = clamp(state.treasury / 10, 0, 20);
+  const gdpScore = clamp((state.gdp - 50) / 3, 0, 20);
+  const inflScore = clamp(20 - Math.abs(state.inflation - 2) * 3, 0, 20);
+  state.score = clamp(Math.round(goalAvg * 0.5 + treasuryScore * 0.2 + gdpScore * 0.2 + inflScore * 0.1), 0, 100);
+}
+
+// ===== POLICY SLIDERS =====
+function updatePolicy() {
+  const tax = parseInt(document.getElementById('taxSlider').value);
+  const spend = parseInt(document.getElementById('spendSlider').value);
+  const rate = parseInt(document.getElementById('rateSlider').value);
+  const money = parseInt(document.getElementById('moneySlider').value);
+
+  document.getElementById('taxDisplay').textContent = tax + '%';
+  document.getElementById('spendDisplay').textContent = spend + '%';
+  document.getElementById('rateDisplay').textContent = rate + '%';
+  document.getElementById('rateVal').textContent = rate + '%';
+  document.getElementById('moneyDisplay').textContent = money < 40 ? 'Tight' : money > 60 ? 'Loose' : 'Normal';
+
+  document.getElementById('taxEffect').textContent = tax > 30 ? 'High taxes: equity ↑, growth ↓' : tax < 15 ? 'Low taxes: growth ↑, equity ↓' : 'Moderate tax rate: balanced';
+  document.getElementById('spendEffect').textContent = spend > 55 ? 'High spending: jobs ↑, inflation risk ↑' : spend < 25 ? 'Austerity: inflation ↓, jobs ↓' : 'Moderate spending: balanced';
+  document.getElementById('rateEffect').textContent = rate > 8 ? 'High rates: inflation ↓, growth ↓' : rate < 2 ? 'Low rates: growth ↑, inflation ↑' : 'Normal monetary policy';
+  document.getElementById('moneyEffect').textContent = money > 65 ? 'Loose money: inflation ↑, growth ↑' : money < 35 ? 'Tight money: inflation ↓, contraction risk' : 'Neutral monetary stance';
+}
+
+// ===== PPF =====
+function updatePPF(val) {
+  const goods = Math.round(val * 0.7);
+  const services = Math.round((100 - val) * 0.6);
+  state.ppfGoods = goods;
+  state.ppfServices = services;
+  document.getElementById('ppfGoods').textContent = goods;
+  document.getElementById('ppfServices').textContent = services;
+  drawPPF();
+}
+
+function drawPPF() {
+  const canvas = document.getElementById('ppfCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#13151f';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = '#2a2d45';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    ctx.beginPath(); ctx.moveTo(i * W/4, 0); ctx.lineTo(i * W/4, H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, i * H/4); ctx.lineTo(W, i * H/4); ctx.stroke();
+  }
+
+  const pad = 28;
+  const maxX = W - pad, maxY = H - pad;
+
+  // PPF curve
+  ctx.beginPath();
+  ctx.strokeStyle = '#e8c44a';
+  ctx.lineWidth = 2;
+  for (let x = 0; x <= 100; x++) {
+    const px = pad + (x / 100) * (maxX - pad);
+    const y = Math.sqrt(1 - (x/100)**2);
+    const py = (H - pad) - y * (H - 2*pad);
+    if (x === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // Current point
+  const curX = pad + (state.ppfGoods / 70) * (maxX - pad);
+  const curY = (H - pad) - (state.ppfServices / 60) * (H - 2*pad);
+  ctx.beginPath();
+  ctx.arc(curX, curY, 6, 0, Math.PI * 2);
+  ctx.fillStyle = '#3ecf8e';
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Labels
+  ctx.fillStyle = '#7a7d99';
+  ctx.font = '9px IBM Plex Mono';
+  ctx.fillText('SERVICES', 2, 14);
+  ctx.fillText('GOODS', maxX - 36, H - 6);
+}
+
+// ===== GDP CHART =====
+function drawGDP() {
+  const canvas = document.getElementById('gdpCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width = canvas.offsetWidth;
+  const H = 90;
+  canvas.height = H;
+  ctx.clearRect(0, 0, W, H);
+
+  const hist = state.gdpHistory;
+  if (hist.length < 2) return;
+
+  const minV = Math.min(...hist) - 10;
+  const maxV = Math.max(...hist) + 10;
+  const pad = 12;
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, 'rgba(62,207,142,0.25)');
+  grad.addColorStop(1, 'rgba(62,207,142,0)');
+
+  ctx.beginPath();
+  hist.forEach((v, i) => {
+    const x = pad + (i / (hist.length - 1)) * (W - 2*pad);
+    const y = (H - pad) - ((v - minV) / (maxV - minV)) * (H - 2*pad);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  const lastX = pad + ((hist.length-1) / (hist.length - 1)) * (W - 2*pad);
+  ctx.lineTo(lastX, H); ctx.lineTo(pad, H); ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  hist.forEach((v, i) => {
+    const x = pad + (i / (hist.length - 1)) * (W - 2*pad);
+    const y = (H - pad) - ((v - minV) / (maxV - minV)) * (H - 2*pad);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = '#3ecf8e'; ctx.lineWidth = 2; ctx.stroke();
+
+  // Points
+  hist.forEach((v, i) => {
+    const x = pad + (i / (hist.length - 1)) * (W - 2*pad);
+    const y = (H - pad) - ((v - minV) / (maxV - minV)) * (H - 2*pad);
+    ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI*2);
+    ctx.fillStyle = '#3ecf8e'; ctx.fill();
+    if (i === hist.length - 1) {
+      ctx.fillStyle = '#e8e9f0'; ctx.font = '9px IBM Plex Mono';
+      ctx.fillText('₤' + Math.round(v) + 'B', x - 20, y - 8);
+    }
+  });
+}
+
+// ===== TRADE ROUTES =====
+function renderTradeRoutes() {
+  const div = document.getElementById('tradeRoutes');
+  div.innerHTML = '';
+  state.tradeRoutes.forEach(r => {
+    const el = document.createElement('div');
+    el.className = 'trade-route' + (r.active ? ' active' : '');
+    el.innerHTML = `
+      <div class="route-flag">${r.flag}</div>
+      <div class="route-info">
+        <div class="route-name">${r.name}</div>
+        <div class="route-desc">${r.desc}</div>
+      </div>
+      <button class="route-btn ${r.active ? 'active' : ''}" onclick="toggleRoute('${r.id}')">
+        ${r.active ? 'TRADING' : 'OPEN'}
+      </button>
+    `;
+    div.appendChild(el);
+  });
+}
+
+function toggleRoute(id) {
+  const route = state.tradeRoutes.find(r => r.id === id);
+  if (!route) return;
+  route.active = !route.active;
+  log(route.active ? `Trade opened with ${route.name}` : `Trade closed with ${route.name}`);
+  renderTradeRoutes();
+  renderAll();
+}
+
+// ===== RENDER LOG =====
+function renderLog() {
+  const div = document.getElementById('eventLog');
+  div.innerHTML = '';
+  state.eventLog.slice(0, 12).forEach(e => {
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `<div class="log-turn">TURN ${e.turn}</div>${e.msg}`;
+    div.appendChild(entry);
+  });
+}
+
+// ===== RENDER MARKET =====
+function renderMarket() {
+  const grid = document.getElementById('marketGrid');
+  grid.innerHTML = '';
+  goods.forEach(g => {
+    const m = state.market[g.id];
+    const trend = m.trend > 0.05 ? '↑' : m.trend < -0.05 ? '↓' : '→';
+    const tcolor = m.trend > 0.05 ? 'var(--green)' : m.trend < -0.05 ? 'var(--red)' : 'var(--muted)';
+    const item = document.createElement('div');
+    item.className = 'market-item';
+    item.innerHTML = `
+      <div class="market-good">${g.icon}</div>
+      <div class="market-name">${g.name}</div>
+      <div class="market-price">₤${m.price.toFixed(1)}</div>
+      <div class="market-trend" style="color:${tcolor}">${trend}</div>
+    `;
+    grid.appendChild(item);
+  });
+}
+
+// ===== RENDER ALL =====
+function renderAll() {
+  // Indicators
+  document.getElementById('gdpVal').textContent = Math.round(state.gdp);
+  document.getElementById('gdpBar').style.width = clamp(state.gdp / 2, 0, 100) + '%';
+  document.getElementById('unempVal').textContent = state.unemployment.toFixed(1) + '%';
+  document.getElementById('unempBar').style.width = clamp(state.unemployment * 4, 0, 100) + '%';
+  document.getElementById('inflVal').textContent = state.inflation.toFixed(1) + '%';
+  document.getElementById('inflBar').style.width = clamp(state.inflation * 5, 0, 100) + '%';
+  document.getElementById('inflVal').style.color = state.inflation > 5 ? 'var(--red)' : state.inflation < 0 ? 'var(--blue)' : 'var(--blue)';
+  document.getElementById('treasuryVal').textContent = Math.round(state.treasury);
+  document.getElementById('treasuryBar').style.width = clamp(state.treasury / 10, 0, 100) + '%';
+  document.getElementById('rateVal').textContent = state.interestRate.toFixed(1) + '%';
+  document.getElementById('rateBar').style.width = clamp(state.interestRate * 5, 0, 100) + '%';
+  document.getElementById('tradeVal').textContent = (state.tradeBalance >= 0 ? '+' : '') + Math.round(state.tradeBalance);
+  document.getElementById('tradeVal').style.color = state.tradeBalance >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('scoreVal').textContent = state.score;
+
+  // Resources
+  document.getElementById('resLand').textContent = Math.round(state.resources.land);
+  document.getElementById('resLabor').textContent = Math.round(state.resources.labor);
+  document.getElementById('resCapital').textContent = Math.round(state.resources.capital);
+  document.getElementById('resEntrepr').textContent = Math.round(state.resources.entrepr);
+
+  // Goals
+  const g = state.goals;
+  ['employment', 'stability', 'growth', 'equity'].forEach((key, i) => {
+    const ids = ['Emp', 'Stab', 'Growth', 'Equity'];
+    const el = document.getElementById('goal' + ids[i]);
+    const valEl = document.getElementById('goal' + ids[i] + 'Val');
+    if (el) { el.style.width = g[key] + '%'; }
+    if (valEl) { valEl.textContent = Math.round(g[key]); }
+  });
+
+  renderMarket();
+  renderTradeRoutes();
+  renderLog();
+  drawPPF();
+  drawGDP();
+  updatePolicy();
+  renderMissionTracker();
+  checkMissionMilestones();
+}
+
+// ===== END SCREEN =====
+function showEndScreen() {
+  document.getElementById('game').classList.remove('active');
+  document.getElementById('endscreen').classList.add('active');
+
+  updateScore();
+  const s = state.score;
+  let grade, title, analysis;
+
+  if (s >= 85) { grade = 'A+'; title = 'Economic Visionary'; }
+  else if (s >= 75) { grade = 'A'; title = 'Masterful Minister'; }
+  else if (s >= 65) { grade = 'B+'; title = 'Skilled Economist'; }
+  else if (s >= 55) { grade = 'B'; title = 'Solid Leadership'; }
+  else if (s >= 45) { grade = 'C+'; title = 'Mixed Results'; }
+  else if (s >= 35) { grade = 'C'; title = 'Struggling Economy'; }
+  else if (s >= 25) { grade = 'D'; title = 'Economic Distress'; }
+  else { grade = 'F'; title = 'Economic Collapse'; }
+
+  const goalAvg = Math.round((state.goals.employment + state.goals.stability + state.goals.growth + state.goals.equity) / 4);
+  const tradingStatus = state.tradeRoutes.filter(r => r.active).length;
+
+  // Mission result
+  let missionHTML = '';
+  if (selectedMission) {
+    const targetsResult = selectedMission.targets.map(t => {
+      const done = checkTarget(t);
+      const cur = t.get();
+      const displayVal = typeof cur === 'number' ? (Number.isInteger(cur) ? cur : cur.toFixed(1)) : cur;
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+        <span style="color:${done ? 'var(--green)' : 'var(--red)'};">${done ? '✓' : '✗'}</span>
+        <span style="font-size:0.8rem;color:${done ? '#e8e9f0' : '#7a7d99'}">${t.label}</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:${done ? 'var(--green)' : 'var(--red)'};">(${displayVal})</span>
+      </div>`;
+    }).join('');
+
+    const allDone = selectedMission.targets.every(t => checkTarget(t));
+    const passCount = selectedMission.targets.filter(t => checkTarget(t)).length;
+
+    missionHTML = `
+      <div style="background:var(--panel);border:2px solid ${allDone ? 'var(--green)' : 'var(--red)'};border-radius:10px;padding:20px;max-width:500px;width:100%;margin-top:4px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <span style="font-size:1.5rem">${selectedMission.icon}</span>
+          <div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:${allDone ? 'var(--green)' : 'var(--red)'}">
+              ${allDone ? '🏆 MISSION COMPLETE!' : `MISSION FAILED — ${passCount}/${selectedMission.targets.length} targets met`}
+            </div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--muted);letter-spacing:1px;margin-top:2px;">${selectedMission.name.toUpperCase()}</div>
+          </div>
+        </div>
+        ${targetsResult}
+        ${allDone
+          ? `<div style="margin-top:10px;font-size:0.78rem;color:var(--green);font-style:italic;">You proved that focused economic leadership achieves real results. Well done.</div>`
+          : `<div style="margin-top:10px;font-size:0.78rem;color:#b0b3cc;font-style:italic;">Every great economist learns from failure. Try again — your instincts will be sharper.</div>`
+        }
+      </div>`;
+  }
+
+  analysis = `<strong>📊 Final Report:</strong><br><br>
+  Your GDP reached <strong>₤${Math.round(state.gdp)}B</strong> with unemployment at <strong>${state.unemployment.toFixed(1)}%</strong> and inflation at <strong>${state.inflation.toFixed(1)}%</strong>.<br><br>
+  You managed <strong>${tradingStatus} trade route(s)</strong> and maintained a treasury of <strong>₤${Math.round(state.treasury)}</strong>. Your average goal score was <strong>${goalAvg}/100</strong>.<br><br>
+  <em>Key Lesson:</em> Every decision had an opportunity cost — the path not taken. Rapid growth risked inflation, equality measures reduced efficiency, and trade brought both benefits and vulnerabilities. This is the fundamental challenge of managing any economy.`;
+
+  document.getElementById('finalGrade').textContent = grade;
+  document.getElementById('endTitle').textContent = title;
+  document.getElementById('endAnalysis').innerHTML = analysis;
+
+  const scoresDiv = document.getElementById('finalScores');
+  scoresDiv.innerHTML = `
+    <div class="final-score-card"><div class="fsc-label">Employment</div><div class="fsc-value" style="color:var(--green)">${Math.round(state.goals.employment)}</div></div>
+    <div class="final-score-card"><div class="fsc-label">Stability</div><div class="fsc-value" style="color:var(--blue)">${Math.round(state.goals.stability)}</div></div>
+    <div class="final-score-card"><div class="fsc-label">Growth</div><div class="fsc-value" style="color:var(--orange)">${Math.round(state.goals.growth)}</div></div>
+    <div class="final-score-card"><div class="fsc-label">Equity</div><div class="fsc-value" style="color:var(--purple)">${Math.round(state.goals.equity)}</div></div>
+  `;
+
+  // Insert mission result block after final scores
+  if (missionHTML) {
+    scoresDiv.insertAdjacentHTML('afterend', missionHTML);
+  }
+}
+
+// ===== INIT =====
+window.onload = () => {
+  drawPPF();
+  updatePolicy();
+};
+</script>
+</body>
+</html>
